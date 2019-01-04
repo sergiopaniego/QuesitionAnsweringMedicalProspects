@@ -1,19 +1,7 @@
-'''import spacy
+import spacy
 
 nlp = spacy.load('es_core_news_sm')
-doc = nlp(u"Lea todo el prospecto detenidamente antes de empezar a tomar este medicamento")
-for token in doc:
-    print(token.text, token.dep_, token.head.text, token.head.pos_, [child for child in token.children])
-'''
 
-# La pregunta primero buscará por la sección que sew sabe que se refiere
-
-# option = input()
-# file = open(option, 'r')3
-
-# file = open('prospecto-ibuprofeno.txt', 'r')
-file = open('prospecto-aspirina.txt', 'r')
-line = file.readline()
 package_content = ''
 medication_appearance = ''
 active_principle = ''
@@ -172,87 +160,111 @@ def extract_prohibitions(file):
     return line
 
 
-count_1 = 0
-count_2 = 0
-count_4 = 0
-count_5 = 0
-while line:
-    if len(line.split('Composición')) > 1:
-        extract_composition(file)
-        print('Composition [\n' + active_principle + ']')
-        line = file.readline()
-    elif len(line.split('Aspecto del producto y contenido del envase')) > 1:
-        extract_medication_appearance_package_content(file)
-        print('Medication appearance [\n' + medication_appearance + ']')
-        print('Package content [\n' + package_content + ']')
-        line = file.readline()
-    elif len(line.split('Forma de administración')) > 1:
-        extract_administration_method(file)
-        print('Administration method [' + administration_method + ']')
-        line = file.readline()
-    elif len(line.split('Cómo tomar')) > 1:
-        # print(line)
-        line = file.readline()
-    elif len(line.split('1. Qué es')) > 1:
-        if count_1 == 0:
-            count_1 += 1
-        else:
-            line = extract_purpose(file)
-            print('Purpose [\n' + purpose + ']')
-    elif len(line.split('Este prospecto ha sido')) > 1:
-        revision_date = line
-        print('Revision date [\n' + revision_date + ']')
-        line = file.readline()
-    elif len(line.split('caducidad')) > 1:
-        extract_expiration_date(file, line)
-        print('Expiration date [\n' + expiration_date + ']')
-        line = file.readline()
-    elif len(line.split('5. Conservación')) > 1:
-        if count_5 == 0:
-            count_5 += 1
+def extract_information(filename):
+    # file = open('prospecto-ibuprofeno.txt', 'r')
+    file = open('prospecto-aspirina.txt', 'r')
+    line = file.readline()
+    count_1 = 0
+    count_2 = 0
+    count_4 = 0
+    count_5 = 0
+    while line:
+        if len(line.split('Composición')) > 1:
+            extract_composition(file)
+            print('Composition [\n' + active_principle + ']')
+            line = file.readline()
+        elif len(line.split('Aspecto del producto y contenido del envase')) > 1:
+            extract_medication_appearance_package_content(file)
+            print('Medication appearance [\n' + medication_appearance + ']')
+            print('Package content [\n' + package_content + ']')
+            line = file.readline()
+        elif len(line.split('Forma de administración')) > 1:
+            extract_administration_method(file)
+            print('Administration method [' + administration_method + ']')
+            line = file.readline()
+        elif len(line.split('1. Qué es')) > 1:
+            if count_1 == 0:
+                count_1 += 1
+            else:
+                line = extract_purpose(file)
+                print('Purpose [\n' + purpose + ']')
+        elif len(line.split('Este prospecto ha sido')) > 1:
+            revision_date = line
+            print('Revision date [\n' + revision_date + ']')
+            line = file.readline()
+        elif len(line.split('caducidad')) > 1:
+            extract_expiration_date(file, line)
+            print('Expiration date [\n' + expiration_date + ']')
+            line = file.readline()
+        elif len(line.split('5. Conservación')) > 1:
+            if count_5 == 0:
+                count_5 += 1
+            else:
+                line = file.readline()
+                extract_conservation_protocol(file, line)
+                print('Conservation [\n' + conservation_protocol + ']')
+            line = file.readline()
+        elif len(line.split('Conducción y uso de máquinas')) > 1:
+            extract_conduction_and_machinery_use(file)
+            print('Conduction and Machinery use [' + conduction_and_machinery_use + ']')
+            line = file.readline()
+        elif len(line.split('Uso en niños:')) > 1:
+            extract_kids_administration_method(file)
+            print('Kids administration [' + kids_administration_method + ']')
+            line = file.readline()
+        elif len(line.split('Pacientes de edad avanzada')) > 1 or len(line.split('Uso en mayores de 65 años')) > 1:
+            extract_elderly_administration_method(file)
+            print('Elderly people administration [' + elderly_administration_method + ']')
+            line = file.readline()
+        elif len(line.split('toma más')) > 1:
+            line = extract_overdose_protocol(file)
+            print('Overdose protocol [' + overdose_protocol + ']')
+        elif len(line.split('Si olvidó tomar')) > 1:
+            line = extract_forgot_medication(file)
+            print('Forgot medication [' + forgot_medication + ']')
+        elif len(line.split('4. Posibles efectos adversos')) > 1:
+            if count_4 == 0:
+                count_4 += 1
+                line = file.readline()
+            else:
+                line = extract_adverse_effects(file)
+                print('Adverse effects [' + adverse_effects + ']')
+        elif len(line.split('Comunicación de efectos adversos')) > 1:
+            line = extract_adverse_effects_communication(file)
+            print('Adverse effects communication [' + adverse_effects_communication + ']')
+        elif len(line.split('Adultos y')) > 1:
+            extract_dosis(file, line)
+            print('Dosis [' + dosis + ']')
+            line = file.readline()
+        elif len(line.split('2.')) > 1:
+            if count_2 == 0:
+                count_2 += 1
+                line = file.readline()
+            else:
+                line = extract_prohibitions(file)
+                print('Prohibitions [' + prohibitions + ']')
         else:
             line = file.readline()
-            extract_conservation_protocol(file, line)
-            print('Conservation [\n' + conservation_protocol + ']')
-        line = file.readline()
-    elif len(line.split('Conducción y uso de máquinas')) > 1:
-        extract_conduction_and_machinery_use(file)
-        print('Conduction and Machinery use [' + conduction_and_machinery_use + ']')
-        line = file.readline()
-    elif len(line.split('Uso en niños:')) > 1:
-        extract_kids_administration_method(file)
-        print('Kids administration [' + kids_administration_method + ']')
-        line = file.readline()
-    elif len(line.split('Pacientes de edad avanzada')) > 1 or len(line.split('Uso en mayores de 65 años')) > 1:
-        extract_elderly_administration_method(file)
-        print('Elderly people administration [' + elderly_administration_method + ']')
-        line = file.readline()
-    elif len(line.split('toma más')) > 1:
-        line = extract_overdose_protocol(file)
-        print('Overdose protocol [' + overdose_protocol + ']')
-    elif len(line.split('Si olvidó tomar')) > 1:
-        line = extract_forgot_medication(file)
-        print('Forgot medication [' + forgot_medication + ']')
-    elif len(line.split('4. Posibles efectos adversos')) > 1:
-        if count_4 == 0:
-            count_4 += 1
-            line = file.readline()
-        else:
-            line = extract_adverse_effects(file)
-            print('Adverse effects [' + adverse_effects + ']')
-    elif len(line.split('Comunicación de efectos adversos')) > 1:
-        line = extract_adverse_effects_communication(file)
-        print('Adverse effects communication [' + adverse_effects_communication + ']')
-    elif len(line.split('Adultos y')) > 1:
-        extract_dosis(file, line)
-        print('Dosis [' + dosis + ']')
-        line = file.readline()
-    elif len(line.split('2.')) > 1:
-        if count_2 == 0:
-            count_2 += 1
-            line = file.readline()
-        else:
-            line = extract_prohibitions(file)
-            print('Prohibitions [' + prohibitions + ']')
-    else:
-        line = file.readline()
+
+
+option = ''
+print('Bienvenido al sistema de preguntas y respuestas sobre prospectos de medicamentos')
+print('Introduce el nombre del archivo que contiene el prospecto médico:')
+filename = input()
+extract_information('')
+while option != '1':
+    print('¿Qué deseas hacer ahora?')
+    print('[0] Introducir una pregunta')
+    print('[1] Terminar')
+    option = input()
+    if option == '0':
+        print('Introduce la pregunta:')
+        question = input()
+        doc = nlp(question)
+        important = []
+        for token in doc:
+            if token.head.text not in important:
+                important.append(token.head.text)
+        print(important)
+
+# ¿Cúal es la forma de administrar el medicamento?
