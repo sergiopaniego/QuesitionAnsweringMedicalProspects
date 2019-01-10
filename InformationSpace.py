@@ -37,7 +37,6 @@ def extract_composition(medicine, file):
     composition_zone = True
     while composition_zone:
         line = file.readline()
-        print(line)
         if medicine.active_principle == '':
             medicine.active_principle = line
         elif len(line.split('- ')) > 1 or len(line.split(' ')) > 1:
@@ -117,11 +116,8 @@ def extract_information():
         while line:
             if len(line.split('Composición')) > 1 or len(line.split('Composición')) > 1:
                 line = extract_composition(medicine, file)
-                print('Composition [\n' + medicine.active_principle + ']')
             elif len(line.split('Aspecto del producto y contenido del envase')) > 1:
                 extract_medication_appearance_package_content(medicine, file)
-                print('Medication appearance [\n' + medicine.medication_appearance + ']')
-                print('Package content [\n' + medicine.package_content + ']')
                 line = file.readline()
             elif len(line.split('1. ')) > 1:
                 if count_1 != 1:
@@ -130,18 +126,15 @@ def extract_information():
                 else:
                     count_1 += 1
                     line = extract_purpose(medicine, file)
-                    print('Purpose [\n' + medicine.purpose + ']')
             elif len(line.split('5. ')) > 1:
                 if count_5 == 0:
                     count_5 += 1
                 else:
                     line = file.readline()
                     extract_conservation_protocol(medicine, file, line)
-                    print('Conservation [\n' + medicine.conservation_protocol + ']')
                 line = file.readline()
             elif len(line.split('Conducción y uso de máquinas')) > 1 or len(line.split('Conducción y uso de máquinas')) > 1:
                 extract_conduction_and_machinery_use(medicine, file)
-                print('Conduction and Machinery use [' + medicine.conduction_and_machinery_use + ']')
                 line = file.readline()
             elif len(line.split('4. Posibles efectos adversos')) > 1:
                 if count_4 == 0:
@@ -149,10 +142,8 @@ def extract_information():
                     line = file.readline()
                 else:
                     line = extract_adverse_effects(medicine, file)
-                    print('Adverse effects [' + medicine.adverse_effects + ']')
             elif len(line.split('Adultos y')) > 1:
                 extract_dosis(medicine, file, line)
-                print('Dosis [' + medicine.dosis + ']')
                 line = file.readline()
             elif len(line.split('2.')) > 1 and count_2 < 2:
                 if count_2 == 0:
@@ -161,7 +152,6 @@ def extract_information():
                 elif count_2 == 1:
                     count_2 += 1
                     line = extract_prohibitions(medicine, file)
-                    print('Prohibitions [' + medicine.prohibitions + ']')
             else:
                 line = file.readline()
         medicines.append(medicine)
@@ -173,17 +163,21 @@ def preprocess_document(tokens):
     return final
 
 
-def matching(question_tokens):
+def matching(question_tokens, full_question_tokens):
     question_tokens = preprocess_document(question_tokens)
+    full_question_tokens = preprocess_document(full_question_tokens)
     dimension_searched = ''
     medicine_searched = ''
     for token in question_tokens:
         if token in dimension_glossary:
-            print('Dimension ' + token)
             dimension_searched = token
         if token in medicines_names_glossary:
             medicine_searched = token
-            print('Medicine name ' + token)
+    if dimension_searched == 'efect' and 'advers' in full_question_tokens:
+        dimension_searched = 'advers'
+    if dimension_searched == '' and 'dolor' not in question_tokens and 'cabez' not in question_tokens:
+        return 'Soy un bot dedicado a los prospectos de medicamentos, solo  puedo ayudarte con esto. ' \
+               '¡Prueba con otra pregunta!'
     dimension_name = ''
     for synonymous in synonymous_glossary:
         if dimension_searched in synonymous[1]:
@@ -197,15 +191,24 @@ def matching(question_tokens):
 
 
 extract_information()
-# print(medicines)
 
-while True:
-    question = input()
-    doc = nlp(question)
-    important = []
-    for token in doc:
-        if token.head.text not in important:
-            important.append(token.head.text)
-    # print(important)
-    answer = matching(important)
-    print(answer)
+print('¡Bienvenido al sistema de preguntas y respuestas!')
+option = ''
+while option != '1':
+    print('¿Qué quieres hacer?')
+    print('[0] Introducir una pregunta')
+    print('[1] Salir')
+    option = input()
+    if option == '0':
+        print('¿Qué deseas preguntar?')
+        question = input()
+        doc = nlp(question)
+        important = []
+        tokens = []
+        for token in doc:
+            tokens.append(token.text)
+            if token.head.text not in important:
+                important.append(token.head.text)
+        answer = matching(important, tokens)
+        print(answer)
+
